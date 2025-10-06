@@ -1,0 +1,49 @@
+name: 🧪 Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Test syntax
+      run: python -m py_compile src/nexus-keygen.py
+    
+    - name: Test execution (Unix)
+      if: runner.os != 'Windows'
+      run: python src/nexus-keygen.py --version
+    
+    - name: Test execution (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        chcp 65001
+        python src/nexus-keygen.py --version
+      shell: cmd
+    
+    - name: Test help (Unix)
+      if: runner.os != 'Windows'
+      run: python src/nexus-keygen.py --help
+    
+    - name: Test help (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        chcp 65001
+        python src/nexus-keygen.py --help
+      shell: cmd

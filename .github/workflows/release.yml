@@ -1,0 +1,52 @@
+name: 🚀 Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
+    
+    - name: Create Release Build
+      run: |
+        # Crear directorios
+        mkdir -p dist
+        mkdir -p build
+        
+        # Copiar archivos al build
+        cp -r src scripts README.md LICENSE build/
+        
+        # Crear .tar.gz para Linux/macOS
+        cd build
+        tar -czf ../dist/nexus-keygen-v${GITHUB_REF#refs/tags/v}.tar.gz .
+        
+        # Crear .zip para Windows  
+        zip -r ../dist/nexus-keygen-v${GITHUB_REF#refs/tags/v}.zip . > /dev/null
+        
+        # Volver al directorio raíz
+        cd ..
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/*.tar.gz
+          dist/*.zip
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,89 @@
+name: 📝 Update README with Latest Releases
+
+on:
+  workflow_run:
+    workflows: ["🚀 Release"]
+    types:
+      - completed
+
+permissions:
+  contents: write
+  
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0  # Necesario para obtener todos los tags
+    
+    - name: Update README with new release
+      run: |
+        # Obtener la versión desde múltiples fuentes
+        if [[ "${{ github.event.workflow_run.head_branch }}" =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+          VERSION="${{ github.event.workflow_run.head_branch }}"
+        elif git describe --tags --abbrev=0 >/dev/null 2>&1; then
+          VERSION=$(git describe --tags --abbrev=0)
+        else
+          # Fallback: obtener de los tags disponibles
+          VERSION=$(git tag --sort=-version:refname | head -1)
+        fi
+        
+        # Si aún no tenemos versión, usar default
+        if [[ -z "$VERSION" ]]; then
+          VERSION="v1.0.5"
+        fi
+        
+        RELEASE_DATE=$(date +"%b %Y")
+        echo "Actualizando README con versión ${VERSION}"
+        
+        # URLs de descarga  
+        TAR_URL="https://github.com/Corxo91/nexus-keygen/releases/download/${VERSION}/nexus-keygen-${VERSION}.tar.gz"
+        ZIP_URL="https://github.com/Corxo91/nexus-keygen/releases/download/${VERSION}/nexus-keygen-${VERSION}.zip"
+        
+        # Crear las nuevas líneas
+        NEW_LINUX_LINE="| **${VERSION}** | [📥 nexus-keygen-${VERSION}.tar.gz](${TAR_URL}) | ~15 KB | ${RELEASE_DATE} |"
+        NEW_WIN_LINE="| **${VERSION}** | [📥 nexus-keygen-${VERSION}.zip](${ZIP_URL}) | ~15 KB | ${RELEASE_DATE} |"
+        
+        # Verificar si ya existe la versión
+        if ! grep -q "| \*\*${VERSION}\*\*" README.md; then
+          # Solo actualizar si la versión es mayor que v1.0.0
+          if [[ "${VERSION}" != "v1.0.0" ]]; then
+            # Crear archivos temporales
+            echo "${NEW_LINUX_LINE}" > /tmp/new_linux.txt
+            echo "${NEW_WIN_LINE}" > /tmp/new_win.txt
+            
+            # Para Linux/macOS - insertar antes de v1.0.0
+            sed -i '/| \*\*v1\.0\.0\*\*.*tar\.gz/e cat /tmp/new_linux.txt' README.md
+            
+            # Para Windows - insertar antes de v1.0.0  
+            sed -i '/| \*\*v1\.0\.0\*\*.*\.zip/e cat /tmp/new_win.txt' README.md
+            
+            echo "✅ README actualizado con ${VERSION}"
+          else
+            echo "⚠️ v1.0.0 ya está en README como versión base"
+          fi
+        else
+          echo "⚠️ La versión ${VERSION} ya existe en el README"
+        fi
+          
+          echo "✅ README actualizado con ${VERSION}"
+        else
+          echo "⚠️ La versión ${VERSION} ya existe en el README"
+        fi
+    
+    - name: Commit changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add README.md
+        if git diff --staged --quiet; then
+          echo "No hay cambios en el README"
+        else
+          git commit -m "📝 docs: Update README with release $(git describe --tags --abbrev=0)"
+          git push
+          echo "✅ README actualizado y commiteado"
+        fi

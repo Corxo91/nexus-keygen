@@ -1,0 +1,28 @@
+# 🔐 Generator Key Nexus Corp
+# ===========================
+
+[project]
+name = "nexus-keygen"
+version = "1.0.0"
+description = "Universal Secure Key Generator"
+authors = ["NexusSecurity Development Team"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://tech.nexuscorp-global.com"
+repository = "https://github.com/Corxo91/nexus-keygen.git"
+keywords = ["security", "keys", "generator", "cryptography", "jwt", "encryption"]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/Corxo91/nexus-keygen/issues"
+"Documentation" = "https://github.com/Corxo91/nexus-keygen/wiki"
+"Source Code" = "https://github.com/Corxo91/nexus-keygen.git"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["nexus-keygen"]
+
+[project.scripts]
+nexus-keygen = "nexus-keygen:main"
